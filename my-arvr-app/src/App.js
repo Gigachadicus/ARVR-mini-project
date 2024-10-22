@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import { AnimationMixer } from 'three';
+import './App.css'; // Include a CSS file for styling
 
 // Model component with shadow casting enabled
-const Model = ({ url, position }) => {
+const Model = ({ url, position, visible }) => {
   const { scene, animations } = useGLTF(url);
   const mixer = useRef();
 
@@ -21,7 +22,15 @@ const Model = ({ url, position }) => {
     mixer.current?.update(delta);
   });
 
-  return <primitive object={scene} position={position} castShadow />;
+  // Ensure the model can cast shadows
+  scene.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true; // Enable shadow casting
+      child.receiveShadow = true; // Enable shadow receiving
+    }
+  });
+
+  return <primitive object={scene} position={position} visible={visible} />;
 };
 
 // Ground plane to receive the shadow
@@ -40,10 +49,13 @@ function App() {
 
   return (
     <div>
-      <select onChange={(e) => setSelectedModel(e.target.value)} value={selectedModel}>
-        <option value="trial -1.glb">Model 1</option>
-        <option value="trial -3.glb">Model 2</option>
-      </select>
+      {/* Fixed-position dropdown */}
+      <div className="model-selector">
+        <select onChange={(e) => setSelectedModel(e.target.value)} value={selectedModel}>
+          <option value="trial -1.glb">Model 1</option>
+          <option value="trial -3.glb">Model 2</option>
+        </select>
+      </div>
 
       <Canvas style={{ height: '100vh' }} shadows>
         {/* Ambient light to provide base illumination */}
@@ -73,13 +85,9 @@ function App() {
           castShadow // Enable shadows from this light
         />
 
-        {/* Render the selected model with shadows */}
-        {selectedModel === 'trial -1.glb' && (
-          <Model url="/models/trial -1.glb" position={[-2, 0, 0]} />
-        )}
-        {selectedModel === 'trial -3.glb' && (
-          <Model url="/models/trial -3.glb" position={[2, 0, 0]} />
-        )}
+        {/* Keep both models and toggle visibility */}
+        <Model url="/models/trial -1.glb" position={[-2, 0, 0]} visible={selectedModel === 'trial -1.glb'} />
+        <Model url="/models/trial -3.glb" position={[2, 0, 0]} visible={selectedModel === 'trial -3.glb'} />
 
         {/* Ground to receive shadows */}
         <Ground />
@@ -92,3 +100,5 @@ function App() {
 }
 
 export default App;
+
+
